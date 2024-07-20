@@ -16,8 +16,8 @@ const commentSchema = new Schema({
         required: true
     },
     author: {
-        type: String,
-        required: true
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
     }
 }, {
     timestamps: true
@@ -51,9 +51,9 @@ const campsiteSchema = new Schema({
         default: false
     },
     comments: [commentSchema]
-    }, {
+}, {
     timestamps: true
-    });
+});
 
 const Campsite = mongoose.model('Campsite', campsiteSchema);
 
