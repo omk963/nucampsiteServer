@@ -16,7 +16,7 @@ campsiteRouter.route('/')
             next(err);
         }
     })
-    .post(authenticate.verifyUser, async (req, res, next) => {
+    .post(authenticate.verifyUser, authenticate.verifyAdmin, async (req, res, next) => {
         try {
             const campsite = await Campsite.create(req.body);
             console.log('Campsite Created', campsite);
@@ -31,7 +31,7 @@ campsiteRouter.route('/')
         res.statusCode = 403;
         res.end('PUT operation not supported on /campsites');
     })
-    .delete(authenticate.verifyUser, async (req, res, next) => {
+    .delete(authenticate.verifyUser, authenticate.verifyAdmin, async (req, res, next) => {
         try {
             const response = await Campsite.deleteMany();
             res.statusCode = 200;
@@ -57,7 +57,7 @@ campsiteRouter.route('/:campsiteId')
         res.statusCode = 403;
         res.end(`POST operation not supported on /campsites/${req.params.campsiteId}`);
     })
-    .put(authenticate.verifyUser, async (req, res, next) => {
+    .put(authenticate.verifyUser, authenticate.verifyAdmin, async (req, res, next) => {
         try {
             const campsite = await Campsite.findByIdAndUpdate(req.params.campsiteId, {
                 $set: req.body
@@ -69,7 +69,7 @@ campsiteRouter.route('/:campsiteId')
             next(err);
         }
     })
-    .delete(authenticate.verifyUser, async (req, res, next) => {
+    .delete(authenticate.verifyUser, authenticate.verifyAdmin, async (req, res, next) => {
         try {
             const response = await Campsite.findByIdAndDelete(req.params.campsiteId);
             res.statusCode = 200;
@@ -148,7 +148,7 @@ campsiteRouter.route('/:campsiteId/comments')
         res.statusCode = 403;
         res.end(`PUT operation not supported on /campsites/${req.params.campsiteId}/comments`);
     })
-    .delete(authenticate.verifyUser, async (req, res, next) => {
+    .delete(authenticate.verifyUser, authenticate.verifyAdmin, async (req, res, next) => {
         try {
             const campsite = await Campsite.findById(req.params.campsiteId);
             if (campsite) {

@@ -7,10 +7,12 @@ const jwt = require('jsonwebtoken'); // used to create, sign, and verify tokens
 
 const config = require('./config.js');
 
-exports.local = passport.use(new LocalStrategy(User.authenticate()));
+// Local Strategy Setup
+exports.local = passport.use(new LocalStrategy(User.authenticate())); 
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
+// Token Generation
 exports.getToken = function(user) {
     return jwt.sign(user, config.secretKey, {expiresIn: 3600});
 };
@@ -38,3 +40,12 @@ exports.jwtPassport = passport.use(
 );
 
 exports.verifyUser = passport.authenticate('jwt', {session: false});
+
+exports.verifyAdmin = (req, res, next) => {
+  if(req.user && req.user.admin) {
+    return next();
+  }
+  const err = new Error("You are not authorized to perform this operation!");
+  res.statusCode = 403;
+  return next(err);
+};
