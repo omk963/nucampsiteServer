@@ -2,11 +2,13 @@ const express = require('express');
 const Campsite = require('../models/campsite');
 const authenticate = require('../authenticate');
 const mongoose = require('mongoose');
+const cors = require('./cors');
 
 const campsiteRouter = express.Router();
 
 campsiteRouter.route('/')
-    .get(async (req, res, next) => {
+    .options(cors.corsWithOptions, (req, res) => res.sendStatus(200))
+    .get(cors.cors, async (req, res, next) => {
         try {
             const campsites = await Campsite.find().populate('comments.author');
             res.statusCode = 200;
@@ -16,7 +18,7 @@ campsiteRouter.route('/')
             next(err);
         }
     })
-    .post(authenticate.verifyUser, authenticate.verifyAdmin, async (req, res, next) => {
+    .post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, async (req, res, next) => {
         try {
             const campsite = await Campsite.create(req.body);
             console.log('Campsite Created', campsite);
@@ -27,11 +29,11 @@ campsiteRouter.route('/')
             next(err);
         }
     })
-    .put(authenticate.verifyUser, (req, res) => {
+    .put(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
         res.statusCode = 403;
         res.end('PUT operation not supported on /campsites');
     })
-    .delete(authenticate.verifyUser, authenticate.verifyAdmin, async (req, res, next) => {
+    .delete(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, async (req, res, next) => {
         try {
             const response = await Campsite.deleteMany();
             res.statusCode = 200;
@@ -43,7 +45,8 @@ campsiteRouter.route('/')
     });
 
 campsiteRouter.route('/:campsiteId')
-    .get(async (req, res, next) => {
+    .options(cors.corsWithOptions, (req, res) => res.sendStatus(200))
+    .get(cors.cors, async (req, res, next) => {
         try {
             const campsite = await Campsite.findById(req.params.campsiteId).populate('comments.author');
             res.statusCode = 200;
@@ -53,11 +56,11 @@ campsiteRouter.route('/:campsiteId')
             next(err);
         }
     })
-    .post(authenticate.verifyUser, (req, res) => {
+    .post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
         res.statusCode = 403;
         res.end(`POST operation not supported on /campsites/${req.params.campsiteId}`);
     })
-    .put(authenticate.verifyUser, authenticate.verifyAdmin, async (req, res, next) => {
+    .put(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, async (req, res, next) => {
         try {
             const campsite = await Campsite.findByIdAndUpdate(req.params.campsiteId, {
                 $set: req.body
@@ -69,7 +72,7 @@ campsiteRouter.route('/:campsiteId')
             next(err);
         }
     })
-    .delete(authenticate.verifyUser, authenticate.verifyAdmin, async (req, res, next) => {
+    .delete(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, async (req, res, next) => {
         try {
             const response = await Campsite.findByIdAndDelete(req.params.campsiteId);
             res.statusCode = 200;
@@ -81,7 +84,8 @@ campsiteRouter.route('/:campsiteId')
     });
 
 campsiteRouter.route('/:campsiteId/comments')
-    .get(async (req, res, next) => {
+    .options(cors.corsWithOptions, (req, res) => res.sendStatus(200))
+    .get(cors.cors, async (req, res, next) => {
         try {
             const campsite = await Campsite.findById(req.params.campsiteId).populate('comments.author');
             if (campsite) {
@@ -97,33 +101,33 @@ campsiteRouter.route('/:campsiteId/comments')
             next(err);
         }
     })
-    .post(authenticate.verifyUser, async (req, res, next) => {
+    .post(cors.corsWithOptions, authenticate.verifyUser, async (req, res, next) => {
         try {
             const campsite = await Campsite.findById(req.params.campsiteId);
             if (campsite) {
                 // Verify and log author information
                 req.body.author = req.user._id;
-                console.log("Before saving, author is:", req.body.author, typeof(req.body.author));
+                console.log("Before saving, author is:", req.body.author, typeof (req.body.author));
                 if (!mongoose.Types.ObjectId.isValid(req.body.author)) {
                     const err = new Error('Invalid author ID');
                     err.status = 400;
                     return next(err);
                 }
                 campsite.comments.push(req.body);
-                
+
                 // Log comments before saving
                 console.log('Campsite comments before save:', campsite.comments);
 
                 campsite.comments.forEach(comment => {
-                    console.log(comment.author, typeof(comment.author))
+                    console.log(comment.author, typeof (comment.author))
                     if (typeof comment.author === 'string' && ObjectId.isValid(comment.author)) {
                         comment.author = new ObjectId(comment.author);
-                        console.log(comment.author, typeof(comment.author))
+                        console.log(comment.author, typeof (comment.author))
                     }
                 })
 
                 await campsite.save();
-                
+
                 // Log success message
                 console.log('Save successful');
 
@@ -144,11 +148,11 @@ campsiteRouter.route('/:campsiteId/comments')
             next(err);
         }
     })
-    .put(authenticate.verifyUser, (req, res) => {
+    .put(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
         res.statusCode = 403;
         res.end(`PUT operation not supported on /campsites/${req.params.campsiteId}/comments`);
     })
-    .delete(authenticate.verifyUser, authenticate.verifyAdmin, async (req, res, next) => {
+    .delete(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, async (req, res, next) => {
         try {
             const campsite = await Campsite.findById(req.params.campsiteId);
             if (campsite) {
@@ -170,7 +174,8 @@ campsiteRouter.route('/:campsiteId/comments')
     });
 
 campsiteRouter.route('/:campsiteId/comments/:commentId')
-    .get(async (req, res, next) => {
+    .options(cors.corsWithOptions, (req, res) => res.sendStatus(200))
+    .get(cors.cors, async (req, res, next) => {
         try {
             const campsite = await Campsite.findById(req.params.campsiteId).populate('comments.author');
             if (campsite && campsite.comments.id(req.params.commentId)) {
@@ -190,11 +195,11 @@ campsiteRouter.route('/:campsiteId/comments/:commentId')
             next(err);
         }
     })
-    .post(authenticate.verifyUser, (req, res) => {
+    .post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
         res.statusCode = 403;
         res.end(`POST operation not supported on /campsites/${req.params.campsiteId}/comments/${req.params.commentId}`);
     })
-    .put(authenticate.verifyUser, async (req, res, next) => {
+    .put(cors.corsWithOptions, authenticate.verifyUser, async (req, res, next) => {
         try {
             const campsite = await Campsite.findById(req.params.campsiteId);
             if (campsite && campsite.comments.id(req.params.commentId)) {
@@ -228,7 +233,7 @@ campsiteRouter.route('/:campsiteId/comments/:commentId')
             next(err);
         }
     })
-    .delete(authenticate.verifyUser, async (req, res, next) => {
+    .delete(cors.corsWithOptions, authenticate.verifyUser, async (req, res, next) => {
         try {
             const campsite = await Campsite.findById(req.params.campsiteId);
             if (campsite && campsite.comments.id(req.params.commentId)) {
